@@ -9,6 +9,8 @@
 #include<QList>
 #include<QString>
 #include"MyLineItem.h"
+#include <QTransform>
+
 MainWin::MainWin(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWin), avt(nullptr)
@@ -16,7 +18,7 @@ MainWin::MainWin(QWidget *parent)
     ui->setupUi(this);
 
     pix = QPixmap(R"(E:\C++\TreeShow\img\yellow.jpg)").scaledToHeight(30);
-    ui->cbx_moshi->addItem("二叉搜索树");
+    //ui->cbx_moshi->addItem("二叉搜索树");
 
     scene = new QGraphicsScene(this);
     ui->view->setScene(scene); //QGraphicsView
@@ -25,6 +27,8 @@ MainWin::MainWin(QWidget *parent)
     //connect(ui->btn_begin, &QPushButton::clicked, this, &MainWin::btn_begin_click);
     //connect(ui->btn_insert, &QPushButton::clicked, this, &MainWin::btn_insert_click);
     //connect(ui->btn_keepB, &QPushButton::clicked, this, &MainWin::btn_keepB_click);
+
+
 
 }
 
@@ -44,7 +48,7 @@ void MainWin::on_btn_begin_clicked()
         data[i] = list[i].toInt();
     }
     avt = AVLTree(data); // 移动拷贝  
-    节点集合 = avt.节点集合();
+    
     打印树();
 }
 
@@ -58,7 +62,6 @@ void MainWin::on_btn_insert_clicked()
     if (flag)
     {
         ui->te_message->append(QString("插入%1成功").arg(val));
-        节点集合 = avt.节点集合();
         打印树();
     }
     else
@@ -69,6 +72,8 @@ void MainWin::on_btn_insert_clicked()
 
 void MainWin::on_btn_keepB_clicked()
 {
+    avt.保持平衡();
+    打印树();
     qDebug() << "按下按钮 qDebug";
 }
 
@@ -81,22 +86,47 @@ void MainWin::on_btn_test_clicked()
     {
         ui->te_message->append(QString("失衡节点的值是%1").arg(t->val));
         QPoint ps = 网格到坐标(t->row, t->col);
-        QList<QGraphicsItem*> ls = scene->items(ps);
-        for (auto item : ls)
-        {
-            auto od = dynamic_cast<MyGraphicsItem*>(item);
-            if (od != nullptr)
-            {
-                qDebug() << "找到失衡节点的图元";
-                QPixmap pix(R"(E:\C++\TreeShow\img\green.jpg)");
-                od->setPix(pix.scaledToHeight(30));
-            }
-        }
+        QTransform trm;
+        QGraphicsItem* ls = scene->itemAt(ps,trm);
+        MyGraphicsItem* item = qgraphicsitem_cast<MyGraphicsItem*>(ls);
+		if (item != nullptr)
+		{
+			qDebug() << "找到失衡节点的图元";
+			QPixmap pix(R"(E:\C++\TreeShow\img\green.jpg)");
+            item->setPix(pix.scaledToHeight(30));
+            // 对这个图元所在这片区域立刻进行重绘
+            scene->update(item->sceneBoundingRect());
+		}
     }
+}
+
+// 删除 指定节点和与它相结的直线
+void MainWin::on_btn_del_clicked()
+{
+    QList<QGraphicsItem*> itemList = scene->selectedItems();
+    for (auto item : itemList)
+    {
+        auto it = qgraphicsitem_cast<MyGraphicsItem*>(item);
+        if (it != nullptr)
+        {
+            qDebug() << QString("将要被删除的节点的值x =%1")
+            .arg(it->getVal());
+			ui->te_message->append(QString("被删除的节点的值是%1")
+                .arg(it->getVal()));
+
+            it->hide();
+            int num =it->reMoveLines(); //隐藏相邻的直线
+            avt.pop(it->getVal()); // 只能去掉末端
+            scene->update();
+		}
+
+    }
+
 }
 
 void MainWin::打印树()
 {
+    vector<Tree*> 节点集合 = avt.节点集合();
     //字宽 为30
     //单位长度为
     QPen pen(Qt::red);
@@ -118,17 +148,18 @@ void MainWin::打印树()
         if (myitem_i < 节点图元个数)
         {
 
-            节点图元池[myitem_i]->setText(QString::number(val));
+            节点图元池[myitem_i]->setVal(val);
             节点图元池[myitem_i]->setPos(QPointF(x1, y1));
         }
         else
         {
             MyGraphicsItem* item = new MyGraphicsItem(QPointF(x1, y1),
-                QString::number(val), pix);
+                val, pix);
             节点图元池.push_back(item);
             scene->addItem(item);
         }
         节点图元池[myitem_i]->show();
+        节点图元池[myitem_i]->clearLines();
         // 连接父节点到子节点的线
         for (size_t j = 0; j < 2; ++j)
         {
@@ -139,23 +170,31 @@ void MainWin::打印树()
             {
                 int x2 = child->row * 40;
                 int y2 = child->col * 60;
+                QTransform transform;
+                auto point = 网格到坐标(child->row, child->col);
+                //auto end = dynamic_cast<MyGraphicsItem*>(scene->itemAt(point, transform));
+                auto end = qgraphicsitem_cast<MyGraphicsItem*>(scene->itemAt(point, transform));
                 if (line_i < 直线图元个数) //调整图元位置
                 {
-                    直线图元池[line_i]->setLine(x1, y1, x2, y2);
+                    直线图元池[line_i]->setTwo(节点图元池[myitem_i],end);
+
                 }
                 else
                 {
-                    QGraphicsLineItem* line = new QGraphicsLineItem(x1, y1, x2, y2);
+                    MyLineItem* line = new MyLineItem(节点图元池[myitem_i], end);
                     直线图元池.push_back(line);
                     scene->addItem(line);
                 }
+                // 由于直线与2个图元连接，把直线添加到2个图元中
+                节点图元池[myitem_i]->addLine(直线图元池[line_i]);
+				end->addLine(直线图元池[line_i]);
                 直线图元池[line_i]->show();
                 直线图元池[line_i]->setPen(pen);
                 line_i++;
             }
         }
     }
-    for (size_t k = line_i; line_i < 直线图元个数; ++k)
+    for (size_t k = line_i; k < 直线图元个数; ++k)
     {
         直线图元池[k]->hide();
     }
@@ -164,6 +203,7 @@ void MainWin::打印树()
     {
         节点图元池[k]->hide();
     }
+    scene->update();
     ui->te_message->append("打印二叉树成功");
 }
 

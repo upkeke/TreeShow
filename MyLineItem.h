@@ -7,7 +7,7 @@ class MyGraphicsItem;
 class MyLineItem:public QGraphicsLineItem 
 {
 public:
-	MyLineItem(MyGraphicsItem* front, MyGraphicsItem* end, QGraphicsItem* parent);
+	MyLineItem(MyGraphicsItem* front, MyGraphicsItem* end, QGraphicsItem* parent=nullptr);
 	void setTwo(MyGraphicsItem*, MyGraphicsItem*);
 private:
 	MyGraphicsItem* front;

@@ -11,7 +11,7 @@ class QGraphicsScene;
 class QPoint;
 class MyGraphicsItem;
 class QGraphicsLineItem;
-class MyGraphicsItem;
+class MyLineItem;
 
 #pragma execution_character_set("utf-8")
 
@@ -34,13 +34,13 @@ private:
     
     AVLTree avt;
     vector<vector<int>> 坐标; // 保存每个节点的坐标
-    vector<Tree*> 节点集合; // 后序遍历收集
+    //vector<Tree*> 节点集合; // 后序遍历收集
     Ui::MainWin *ui;
     QGraphicsScene* scene;
     QPixmap pix;
     vector<MyGraphicsItem*> 节点图元池;
-    vector<QGraphicsLineItem*> 直线图元池;
-    //vector<MyLineItem*> 直线图元池;
+    //vector<QGraphicsLineItem*> 直线图元池;
+    vector<MyLineItem*> 直线图元池;
 
     void 打印树();
     QPoint 网格到坐标(int x, int y);
@@ -50,6 +50,7 @@ private slots:
     void on_btn_keepB_clicked();
 
     void on_btn_test_clicked();
+    void on_btn_del_clicked();
 
 };
 #endif // MAINWIN_H

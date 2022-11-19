@@ -12,6 +12,12 @@ using std::endl;
 
 namespace 二叉树
 {
+
+	bool Tree::operator<(const Tree& t)
+	{
+		return val < t.val;
+	}
+
 	void Tree::层级遍历()
 	{
 		////http://520it.com/binarytrees/
@@ -111,6 +117,9 @@ namespace 二叉树
 	// 2）不平衡点一定在根节点到插入这个点路径上
 	void AVLTree::_获得失衡节点(Tree* _head, int val)
 	{
+
+		// 虽然输入更快，有漏洞，val是最后插入的数，这个这个数不一定插入成功，等待后序修正
+		// 同时插入这个数可能被 pop调，这时候val已经不在了
 		if (_head->val == val)return;
 		if (_head == nullptr) return;
 		if (_head->val > val) //当前值大于插入节点，插入节点在左边，
@@ -126,12 +135,12 @@ namespace 二叉树
 		}
 	}
 
-	void AVLTree::_修正节点横坐标(Tree* head)
+	void AVLTree::_修正节点横坐标(Tree* head,int &index)
 	{
 		if (head == nullptr) return;
-		_修正节点横坐标(head->left);
-		head->row = row_index++;
-		_修正节点横坐标(head->right);
+		_修正节点横坐标(head->left,index);
+		head->row = index++;
+		_修正节点横坐标(head->right,index);
 	}
 	void AVLTree::_修正节点纵坐标(Tree* head)
 	{
@@ -157,6 +166,13 @@ namespace 二叉树
 			}
 		} while (!Q.empty());
 	}
+	void AVLTree::_修正坐标(Tree* head)
+	{
+		int index = 0;
+
+		_修正节点横坐标(head,index);
+		_修正节点纵坐标(head);
+	}
 	void AVLTree::_后序遍历收集节点(Tree* head, vector<Tree*>& vt)
 	{
 		if (head == nullptr)
@@ -165,9 +181,71 @@ namespace 二叉树
 		_后序遍历收集节点(head->right, vt);
 		vt.push_back(head);
 	}
+
+	void AVLTree::_sort_tree(vector<Tree*>& vt1)
+	{
+		if (vt1[0]->val > vt1[1]->val) std::swap(vt1[0], vt1[1]);
+		if (vt1[1]->val > vt1[2]->val) std::swap(vt1[1], vt1[2]);
+		if (vt1[0]->val > vt1[1]->val) std::swap(vt1[0], vt1[1]);
+	}
 	void AVLTree::保持平衡()
 	{
 
+		Tree* temp = 失衡节点();
+		if (失衡点 == nullptr) return;
+		vector<Tree*> vt1(3, nullptr);
+		vector<Tree*> vt2;
+		vt1[0] = temp;
+		for (size_t i = 1; i < 3; i++)
+		{
+			if (temp->val > insert_val)
+			{
+				vt1[i] = temp->left;
+				if (temp->right != nullptr)
+				{
+					vt2.push_back(temp->right);
+				}
+			}
+			else
+			{
+				vt1[i] = temp->right;
+				if (temp->left != nullptr)
+				{
+					vt2.push_back(temp->left);
+				}
+			}
+			temp = vt1[i];
+		}
+		if(temp->left!=nullptr)vt2.push_back(temp->left);
+		if(temp->right !=nullptr)vt2.push_back(temp->right);
+		for (auto ptr : vt1)
+		{
+			ptr->left = nullptr;
+			ptr->right = nullptr;
+		}
+		//对vt1进行排序
+		_sort_tree(vt1);
+		// *失衡点 等于 vt1中间的value
+		std::swap(失衡点->val, vt1[1]->val); //此时vt1又被打乱
+		_sort_tree(vt1);
+		失衡点->left = vt1[0];
+		失衡点->right = vt1[2];
+
+		for (auto ptr : vt2)
+		{
+			int val = ptr->val;
+			if (val > vt1[2]->val)
+				vt1[2]->right = ptr;
+			else if (val > vt1[1]->val)
+				vt1[2]->left = ptr;
+			else if (val > vt1[0]->val)
+				vt1[0]->right = ptr;
+			else
+				vt1[0]->left = ptr;
+		}
+		qDebug() << "修正平衡完毕";
+		失衡点 = nullptr;
+		_修正坐标(head);
 	}
 	AVLTree::AVLTree(vector<int> data):AVLTree()
 	{
@@ -180,6 +258,7 @@ namespace 二叉树
 	{
 		*this = std::move(tree);
 	}
+
 	AVLTree& AVLTree::operator=(AVLTree&& tree)
 	{
 		if (head == tree.head) return *this;
@@ -190,14 +269,13 @@ namespace 二叉树
 	}
 	bool AVLTree::insert(int val)
 	{
+		insert_val = val;
 		bool flag = _insert(head, val);
 		if (flag)
 		{
 			失衡点 = nullptr;
 			_获得失衡节点(head, val);
-			row_index = 0;
-			_修正节点横坐标(head);
-			_修正节点纵坐标(head);
+			_修正坐标(head);
 			//找到这个失衡点后，然后沿着它往插入点的方向收集三个树节点
 			if (失衡点 != nullptr)
 				qDebug() << "失衡点的值：" << 失衡点->val;
@@ -210,6 +288,32 @@ namespace 二叉树
 		}
 		return flag;
 	}
+
+	bool AVLTree::pop(int val)
+	{
+		function<void(Tree*)> func = [&](Tree* top) {
+			if (top == nullptr) return;
+			Tree** tp = nullptr;
+			if (top->val > val)
+				tp = &top->left;
+			else
+				tp = &top->right;
+			if (*tp != nullptr)
+			{
+				if ((*tp)->val == val)
+				{
+					delete (*tp);
+					*tp = nullptr;
+				}
+				else
+					func(*tp);
+			}
+		};
+		func(head);
+		_修正坐标(head);
+		return true;
+	}
+
 	void AVLTree::层级遍历()
 	{
 		head->层级遍历();
@@ -220,6 +324,8 @@ namespace 二叉树
 	}
 	Tree* AVLTree::失衡节点()
 	{
+		失衡点 = nullptr;
+		_获得失衡节点(head, insert_val);
 		return 失衡点;
 	}
 	int AVLTree::深度()
