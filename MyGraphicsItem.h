@@ -4,12 +4,25 @@
 #include <vector>
 using std::vector;
 class MyLineItem;
+#include <QPen>
+
+#ifndef NODECOLOR
+#define NODECOLOR
+enum class NodeColor
+{
+	yellow,
+	green,
+	red,
+	black,
+};
+#endif
+
 class MyGraphicsItem : public QObject, public QGraphicsItem
 {
     Q_OBJECT
 public:
     //https://blog.csdn.net/kenfan1647/article/details/116991074
-    explicit MyGraphicsItem(const QPointF& pos, int val, const QPixmap &pix,
+    explicit MyGraphicsItem(const QPointF& pos, int val, NodeColor pix_c,
         QGraphicsItem* parent = nullptr);
 
     void setVal(int num);
@@ -23,7 +36,9 @@ private:
     QPointF lt; //左上角的坐标
     QPixmap pix; //图元的背景图片
     vector<MyLineItem*> lineArry; //与当前图元连接的图元集合
-
+    QPen pen;
+    NodeColor color;
+     
 
 signals:
 
@@ -34,6 +49,6 @@ public:
     QRectF boundingRect() const override;
 
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent* event)override;
-    void setPix(const QPixmap& p);
+    void setBackColor(NodeColor pix_c);
 };
 

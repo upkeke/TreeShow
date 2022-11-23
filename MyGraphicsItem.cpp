@@ -3,10 +3,41 @@
 #include<QPainter>
 #include "MyLineItem.h"
 #include <QString>
-MyGraphicsItem::MyGraphicsItem(const QPointF& pos, int val, const QPixmap& pix,
-    QGraphicsItem* parent) :QGraphicsItem{ parent },  val(val),pix(pix)
+
+namespace
+{
+	QString getPixFile(const NodeColor &pix_c)
+	{
+		QString str;
+		switch (pix_c)
+		{
+		case NodeColor::yellow:
+			str = "yellow";
+			break;
+		case NodeColor::red:
+			str = "red";
+			break;
+		case NodeColor::black:
+			str = "black";
+			break;
+		default:
+			break;
+		}
+		return QString("E:/C++/TreeShow/img/%1.jpg").arg(str);
+	}
+}
+
+MyGraphicsItem::MyGraphicsItem(const QPointF& pos, int val, NodeColor pix_c, QGraphicsItem* parent) :QGraphicsItem{ parent }, val(val), pen(Qt::black), color(pix_c)
     
 {
+	pix.load("E:/C++/TreeShow/img/yellow.jpg");
+	pix = pix.scaledToHeight(30);
+
+    // 红黑树和 平衡树的底图不一样，在上面写数字用的颜色有差别
+    if (pix_c == NodeColor::black)
+        this->pen.setColor(Qt::white);
+    //else
+    //    pen.setColor(Qt::black);
 
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
@@ -19,9 +50,26 @@ MyGraphicsItem::MyGraphicsItem(const QPointF& pos, int val, const QPixmap& pix,
 }
 void MyGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
+	if (color == NodeColor::green || color == NodeColor::yellow)
+	{
+		painter->drawPixmap(lt, pix); //高度 30 
+	}
+    else
+    {
+        if (color == NodeColor::red)
+        {
+			painter->setBrush(Qt::red);
+        }
+        else
+        {
+            painter->setBrush(Qt::black);
+        }
 
-    painter->drawPixmap(lt, pix); //高度 30 
+		//painter->drawEllipse(boundingRect());
+		painter->drawEllipse(QPoint(0,0),15,15);
+    }
     QFont font("微软雅黑", 15);
+    painter->setPen(pen);
     painter->setFont(font);
     painter->drawText(boundingRect(), Qt::AlignCenter, QString::number(val));
 }
@@ -29,7 +77,7 @@ void MyGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* op
 void MyGraphicsItem::setVal(int num)
 {
     val = num;
-    show();
+    //show();
 }
 
 int MyGraphicsItem::getVal()
@@ -70,9 +118,20 @@ void MyGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
         this->scene()->update();
 }
 
-void MyGraphicsItem::setPix(const QPixmap& p)
+void MyGraphicsItem::setBackColor(NodeColor ncolor)
 {
-    pix = p;
-    show();
+	color = ncolor;
+
+    if (color == NodeColor::green || color == NodeColor::yellow)
+    {
+		pix.load(getPixFile(ncolor));
+		pix = pix.scaledToHeight(30);
+    }
+    
+    if(color == NodeColor::black)
+        this->pen.setColor(Qt::white);
+    else
+        this->pen.setColor(Qt::black);
+
 }
 

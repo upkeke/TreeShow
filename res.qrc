@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="m">
+    <file>img/green.jpg</file>
+    <file>img/pink.jpg</file>
+    <file>img/yellow.jpg</file>
+  </qresource>
+</RCC>

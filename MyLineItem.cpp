@@ -15,7 +15,7 @@ MyLineItem::MyLineItem(MyGraphicsItem* front, MyGraphicsItem* end, QGraphicsItem
 	setFlag(QGraphicsItem::ItemIsSelectable); //线段可选择的
 	//QPen(Qt::red, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
 	QPen pen(Qt::red);
-	pen.setWidth(2);
+	pen.setWidth(3);
 	setPen(pen);
 
 }

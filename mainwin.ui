@@ -29,12 +29,12 @@
         <widget class="QComboBox" name="cbx_moshi">
          <item>
           <property name="text">
-           <string>二叉搜索树</string>
+           <string>二叉平衡树</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>二叉平衡树</string>
+           <string>红黑树</string>
           </property>
          </item>
         </widget>
@@ -64,9 +64,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btn_test">
+        <widget class="QPushButton" name="btn_focus_next">
          <property name="text">
-          <string>失衡节点</string>
+          <string>锁定失衡节点</string>
          </property>
         </widget>
        </item>
@@ -155,6 +155,8 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources/>
+ <resources>
+  <include location="res.qrc"/>
+ </resources>
  <connections/>
 </ui>
